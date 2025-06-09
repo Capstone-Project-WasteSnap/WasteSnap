@@ -13,7 +13,7 @@ const RegisterPage = () => {
 
   const handleRegister = async (formData) => {
     setIsLoading(true);
-    setError("");
+    setError ("");
 
     try {
       const response = await api.post("/auth/register", formData);

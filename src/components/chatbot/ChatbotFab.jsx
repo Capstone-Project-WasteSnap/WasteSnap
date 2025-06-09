@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { FaComment, FaTimes, FaRedo } from 'react-icons/fa';
-import '../../styles/ChatbotFab.css'; // Pastikan path ini benar
+import { useAuth } from "../../context/AuthContext";
+import '../../styles/ChatbotFab.css';
 
 // DATA SAMPAH LENGKAP 
 const wasteData = {
