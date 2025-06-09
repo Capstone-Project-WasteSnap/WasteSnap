@@ -2,11 +2,11 @@
   display: flex;
   justify-content: center;
   align-items: center;
-  min-height: 90vh;
+  min-height: 87vh;
   background-color: #fff;
   padding: 1rem;
-  padding-top: 60px;
-  animation: fadeIn 0.6s ease-in-out;
+  padding-top: 50px;
+  padding-bottom: 40px;
 }
 
 .login-section {
@@ -132,15 +132,33 @@
 /* register */
 
 /* Kartu form auth */
+
+.register-page {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 87vh;
+  background-color: #fff;
+  padding: 2rem;
+  padding-top: 5px;
+  padding-bottom: 5px;
+}
+
 .auth-card {
   background-color: #ffffff;
   border-radius: 10px;
   box-shadow: 0 6px 20px rgba(0, 0, 0, 0.07);
-  padding: 1.9rem;
-  width: 900px;
+  padding: 2rem;
+  width: 100%;
+  max-width: 500px; /* Menentukan lebar maksimum agar lebih nyaman di desktop */
   box-sizing: border-box;
-  margin-top: -25px;
 }
+
+.register-section {
+  width: 100%;
+  max-width: 450px;
+}
+
 
 /* Judul halaman auth */
 .auth-title {
@@ -251,18 +269,49 @@
   text-decoration: underline;
 }
 
-/* Responsive behavior */
+/* Mobile (max-width: 480px) */
 @media (max-width: 480px) {
+  .register-page {
+    padding: 1.2rem;
+  }
+
   .auth-card {
     padding: 1.2rem;
   }
 
   .auth-title {
     font-size: 1.35rem;
-    font-weight: bold;
   }
 
   .auth-button {
     font-size: 0.9rem;
+  }
+}
+
+/* Tablet (481px - 768px) */
+@media (min-width: 481px) and (max-width: 768px) {
+  .auth-card {
+    max-width: 600px;
+    padding: 2rem;
+  }
+
+  .auth-title {
+    font-size: 1.6rem;
+  }
+}
+
+/* Desktop (min-width: 769px) */
+@media (min-width: 769px) {
+  .auth-card {
+    max-width: 950px; /* sebelumnya 700px, sekarang lebih lebar */
+    padding: 2.5rem 3rem;
+  }
+
+  .auth-title {
+    font-size: 1.8rem;
+  }
+
+  .auth-button {
+    font-size: 1rem;
   }
 }

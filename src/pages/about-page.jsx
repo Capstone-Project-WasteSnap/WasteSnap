@@ -19,10 +19,7 @@ const AboutPage = () => {
           <p className="about-description">
             Kami hadir dengan solusi berbasis AI untuk mengatasi masalah sampah
             yang terus meningkat. Melalui teknologi machine learning, pengguna
-            dapat mengenali jenis sampah hanya dengan memindai gambar. Kami juga
-            menyediakan panduan interaktif dalam mengolah sampah organik menjadi
-            kompos, serta mendaur ulang sampah anorganik menjadi barang yang
-            berguna.
+            dapat mengenali jenis sampah hanya dengan memindai gambar. berguna.
           </p>
         </div>
         <div className="about-image">
@@ -34,9 +31,10 @@ const AboutPage = () => {
       <div className="collaboration-section container">
         <div className="collab-wrapper">
           {/* Kiri: Logo Komunitas */}
-          <div className="collab-logos">
-            <div className="logo-grid">
-              <img src={imageKolaborasi} alt="Logo" className="collab-logo" />
+
+          <div className="logo-grid">
+            <div className="collab-logo">
+              <img src={imageKolaborasi} alt="Logo" />
             </div>
           </div>
 
