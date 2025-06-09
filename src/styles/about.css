@@ -35,6 +35,7 @@ body {
 /* About Section */
 .about-section {
   padding: 6rem 1rem;
+  padding-top: 100px;
 }
 
 .section-title {
@@ -85,11 +86,17 @@ body {
   flex: 1;
   min-width: 300px;
   text-align: center;
+  overflow: hidden; /* Penting: agar zoom tidak keluar container */
 }
 
 .about-image img {
   max-width: 70%;
   height: auto;
+  transition: transform 0.3s ease; /* Animasi halus 0.3 detik */
+}
+
+.about-image:hover img {
+  transform: scale(1.1); /* Membesar 10% saat dihover */
 }
 
 /* Responsive for tablets */
@@ -103,7 +110,7 @@ body {
   .about-text,
   .about-image {
     flex: none;
-    width: 100%;
+    width: 65%;
     min-width: auto;
   }
 
@@ -122,28 +129,41 @@ body {
 
 /* Responsive for phones */
 @media (max-width: 480px) {
+  .collab-logo {
+    justify-content: center;
+  }
+
+  .logo-grid {
+    justify-content: center;
+    text-align: center;
+  }
+
   .about-title {
     font-size: 1.6rem;
   }
 
   .about-description {
-    font-size: 0.7rem;
+    font-size: 0.85rem;
+    max-width: 280px;
+    gap: 0.8rem;
   }
 
   .about-wrapper {
     gap: 20px;
-    margin-bottom: 50px;
+    margin-bottom: 100px;
     padding: 0 15px;
   }
 
   .about-image img {
-    max-width: 100%;
+    margin-top: 25px;
+    max-width: 280px;
   }
 }
 
 /* Page ke 2 - Collaboration Section */
+/* Collaboration Section */
 .collaboration-section {
-  padding: 8rem 2rem;
+  padding: clamp(3rem, 6vw, 8rem) clamp(1rem, 3vw, 2rem);
   background-color: #f8f9fa;
 }
 
@@ -151,256 +171,294 @@ body {
   display: flex;
   flex-direction: row;
   align-items: center;
-  gap: 4rem; /* Increased gap for desktop */
-  max-width: 1400px; /* Larger max-width for desktop */
+  gap: clamp(2rem, 4vw, 4rem);
+  max-width: 1400px;
   margin: 0 auto;
 }
-
-/* Logo grid - fixed large size for desktop */
 .collab-logos {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 2rem; /* Larger gap for desktop */
+  gap: clamp(1rem, 2vw, 2rem);
   justify-items: center;
   align-items: center;
-  width: 50%; /* Fixed width for desktop */
+  width: 50%;
 }
 
-/* Large logo containers for desktop */
 .collab-logo {
-  width: 100%;
+  width: 60%;
   position: relative;
-  padding-bottom: 100%;
-  transition: transform 0.3s ease;
+  overflow: hidden; /* Penting: agar zoom tidak keluar dari kotak */
+  text-align: center;
 }
 
 .collab-logo img {
-  position: absolute;
-  top: 0;
-  left: 0;
   width: 100%;
-  height: 100%;
+  height: auto;
   object-fit: contain;
-  padding: 10%;
   filter: grayscale(30%);
-  transition: all 0.3s ease;
+  transition: transform 0.3s ease, filter 0.3s ease;
 }
 
 .collab-logo:hover img {
-  transform: scale(1.1); /* Slightly larger hover effect for desktop */
-  filter: grayscale(0%);
+  transform: scale(1.1); /* Membesar 10% saat hover */
+  filter: grayscale(0%); /* Opsional: warna kembali saat hover */
 }
 
 .collab-text {
-  width: 40%; /* Fixed width for desktop */
+  width: 40%;
 }
 
 .collab-text .section-title {
-  font-size: 2.8rem; /* Fixed large size for desktop */
+  font-size: clamp(1.5rem, 4vw, 2.8rem);
   font-weight: 700;
   color: #0d47a1;
-  margin-bottom: 2rem;
+  margin-bottom: clamp(1rem, 2vw, 2rem);
   line-height: 1.2;
 }
 
 .collab-description {
-  font-size: 1.2rem; /* Fixed size for desktop */
+  font-size: clamp(0.9rem, 1.2vw, 1.2rem);
   color: #444;
-  line-height: 1.8;
-  margin-bottom: 2rem;
+  line-height: 1.6;
+  margin-bottom: clamp(1rem, 2vw, 2rem);
 }
 
-/* Laptop/Desktop smaller screens */
-@media (max-width: 1440px) {
+/* Tablet Layout (768px - 992px) */
+@media (max-width: 992px) {
   .collab-wrapper {
-    max-width: 1200px;
-    gap: 3rem;
-  }
-  
-  .collab-text .section-title {
-    font-size: 2.5rem;
-  }
-}
-
-/* Large tablets and small laptops */
-@media (max-width: 1024px) {
-  .collaboration-section {
-    padding: 6rem 2rem;
-  }
-  
-  .collab-text .section-title {
-    font-size: 2.2rem;
-  }
-  
-  .collab-description {
-    font-size: 1.1rem;
-  }
-  
-  .collab-logos {
-    gap: 1.5rem;
-  }
-}
-
-/* Tablet layout */
-@media (max-width: 768px) {
-  .collab-wrapper {
-    flex-direction: column;
-    text-align: center;
-    gap: 3rem;
-    max-width: 800px;
+    flex-direction: column-reverse;
   }
 
-  .collab-text, 
+  .collab-text,
   .collab-logos {
     width: 100%;
+    max-width: 700px;
   }
 
   .collab-text {
-    padding: 0 2rem;
-  }
-
-  .collab-logos {
-    grid-template-columns: repeat(3, 1fr);
-    gap: 1.5rem;
-    max-width: 600px;
-    margin: 0 auto;
-  }
-}
-
-/* Mobile layout */
-@media (max-width: 600px) {
-  .collaboration-section {
-    padding: 4rem 1.5rem;
-  }
-  
-  .collab-text {
+    text-align: center;
     padding: 0 1rem;
   }
-  
-  .collab-text .section-title {
-    font-size: 2rem;
-  }
-  
+}
+
+/* Mobile Layout (576px - 767px) */
+@media (max-width: 768px) {
   .collab-logos {
-    gap: 1rem;
+    grid-template-columns: repeat(2, 1fr);
+    max-width: 500px;
+  }
+  .section-title {
+    text-align: center;
+  }
+  .logo-grid {
+    text-align: center;
   }
 }
 
-/* Small mobile devices */
-@media (max-width: 480px) {
+/* Small Mobile (400px - 575px) */
+@media (max-width: 576px) {
   .collaboration-section {
     padding: 3rem 1rem;
   }
-  
-  .collab-text .section-title {
-    font-size: 1.8rem;
-    margin-bottom: 1.5rem;
-  }
-  
-  .collab-description {
-    font-size: 1rem;
-  }
-  
+
   .collab-logos {
-    grid-template-columns: repeat(2, 1fr);
     gap: 1rem;
+    max-width: 350px;
   }
 }
 
-/* Very small devices */
-@media (max-width: 360px) {
-  .collab-text .section-title {
-    font-size: 1.6rem;
-  }
-  
+/* Extra Small Mobile (below 400px) */
+@media (max-width: 400px) {
   .collab-logos {
+    max-width: 280px;
     gap: 0.8rem;
+    justify-content: center;
+  }
+
+  .collab-text .section-title {
+    font-size: 1.5rem;
+    text-align: center;
+  }
+
+  .collab-description {
+    font-size: 0.85rem;
   }
 }
 
-/* Print styling */
-@media print {
-  .collaboration-section {
-    padding: 2rem 0;
-    break-inside: avoid;
-  }
-  
-  .collab-logo img {
-    filter: grayscale(100%) contrast(120%);
-    padding: 10%;
-  }
-}
-
-/* page ke 3 */
+/* ==================== Team Section - Mobile Optimized ==================== */
 .team-section {
-  padding: 90px 50px;
+  padding: clamp(3rem, 5vw, 5rem) clamp(1rem, 3vw, 2rem);
   display: flex;
   justify-content: center;
-}
-
-.container {
-  max-width: 1200px;
-  width: 100%;
+  background-color: #f8fafc;
 }
 
 .content-wrapper {
   display: flex;
-  flex-direction: row;
+  flex-direction: column;
   align-items: center;
-  justify-content: space-between;
-  flex-wrap: wrap;
-  gap: 40px;
+  gap: 2.5rem;
+  width: 100%;
 }
 
 .team-text {
-  flex: 1;
-  min-width: 300px;
+  width: 100%;
+  text-align: center;
 }
 
 .section-title {
-  font-size: 2.5rem;
+  font-size: clamp(1.7rem, 6vw, 2.5rem);
   font-weight: 700;
   color: #0d47a1;
-  margin-bottom: 20px;
+  margin-bottom: 1rem;
+  line-height: 1.3;
+  text-align: center;
 }
 
 .team-description {
-  font-size: 1.1rem;
+  font-size: clamp(0.9rem, 3.5vw, 1.1rem);
   color: #444;
-  max-width: 500px;
+  max-width: 100%;
+  line-height: 1.6;
+  padding: 0 1rem;
+  text-align: center;
 }
 
 .team-avatars {
   display: grid;
-  grid-template-columns: repeat(3, 100px);
-  grid-template-rows: repeat(2, 100px);
-  gap: 50px;
-  justify-content: center;
-  align-items: center;
-  flex: 1;
-  min-width: 320px;
-}
-
-.team-avatars .avatar {
-  transition: transform 0.3s ease, box-shadow 0.3s ease;
-}
-
-.team-avatars .avatar:hover {
-  transform: scale(1.1);
-  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
-  z-index: 1;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 0.5rem;
+  width: 100%;
+  max-width: 400px;
+  margin: 0 auto;
 }
 
 .avatar {
-  width: 130px;
-  height: 130px;
+  width: 100%;
+  max-width: 100px; /* default max size for mobile */
+  height: auto;
+  aspect-ratio: 1 / 1;
   border-radius: 50%;
   object-fit: cover;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
-  border: 2px solid #ccc;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  border: 3px solid white;
+  transition: all 0.3s ease;
+}
+
+.avatar:hover {
+  transform: scale(1.05);
+  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
 }
 
 .avatar.placeholder {
-  background-color: #cbe2ff;
-  border: 2px solid #999;
+  background-color: #e3f2fd;
+  border: 3px solid #90caf9;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #0d47a1;
+  font-weight: bold;
+}
+
+/* ==================== Responsive Breakpoints ==================== */
+
+/* Medium Mobile (400px - 575px) */
+@media (min-width: 400px) {
+  .team-avatars {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 2rem;
+  }
+
+  .avatar {
+    max-width: 90px;
+  }
+}
+
+/* Small Mobile (max-width: 399px) */
+@media (max-width: 399px) {
+  .avatar {
+    max-width: 85px;
+  }
+}
+
+/* Extra Small (max-width: 320px) */
+@media (max-width: 320px) {
+  .team-avatars {
+    margin-top: 300px;
+  }
+
+  .avatar {
+    max-width: 75px;
+  }
+}
+
+/* Large Mobile (576px - 767px) */
+@media (min-width: 576px) {
+  .team-avatars {
+    grid-template-columns: repeat(3, 1fr);
+    max-width: 500px;
+  }
+
+  .team-description {
+    max-width: 90%;
+  }
+
+  .avatar {
+    max-width: 95px;
+  }
+}
+
+/* Tablet (768px - 991px) */
+@media (min-width: 768px) {
+  .content-wrapper {
+    flex-direction: row;
+    align-items: center;
+    text-align: left;
+    gap: 3rem;
+  }
+
+  .team-text {
+    flex: 1;
+    text-align: left;
+  }
+
+  .team-description {
+    padding: 0;
+    max-width: 500px;
+    text-align: left;
+  }
+
+  .team-avatars {
+    flex: 1;
+    grid-template-columns: repeat(3, 1fr);
+    max-width: none;
+  }
+
+  .section-title {
+    text-align: left;
+  }
+
+  .avatar {
+    max-width: 110px;
+  }
+}
+
+/* Desktop (992px+) */
+@media (min-width: 992px) {
+  .team-section {
+    padding: 5rem 2rem;
+  }
+
+  .content-wrapper {
+    gap: 4rem;
+  }
+
+  .team-avatars {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 2.5rem;
+  }
+
+  .avatar {
+    max-width: 130px;
+  }
 }

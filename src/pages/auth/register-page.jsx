@@ -28,8 +28,8 @@ const RegisterPage = () => {
   };
 
   return (
-    <main className="login-page">
-      <section className="login-section">
+    <main className="register-page">
+      <section className="register-section">
         <div className="auth-card">
           <h2 className="auth-title">Daftar Akun</h2>
           <RegisterForm
