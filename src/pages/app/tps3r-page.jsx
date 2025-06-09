@@ -1,385 +1,423 @@
-import React, { useEffect, useRef, useState } from "react";
-import { MapContainer, TileLayer, Marker, Popup, useMap } from "react-leaflet";
-import L from "leaflet";
-import "leaflet/dist/leaflet.css";
-import "leaflet-routing-machine/dist/leaflet-routing-machine.css";
-import "leaflet-routing-machine";
-import markerIcon from "leaflet/dist/images/marker-icon.png";
-import markerIcon2x from "leaflet/dist/images/marker-icon-2x.png";
-import markerShadow from "leaflet/dist/images/marker-shadow.png";
-import "../../styles/tps3r.css";
+import { useState, useEffect, useRef } from 'react';
+import { useAuth } from '../../context/AuthContext';
+import api from '../../service/api';
+import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
+import L from 'leaflet';
+import 'leaflet/dist/leaflet.css';
+import '../../styles/Tps3rPage.css';
 
-// Fix default marker icons
 delete L.Icon.Default.prototype._getIconUrl;
 L.Icon.Default.mergeOptions({
-  iconRetinaUrl: markerIcon2x,
-  iconUrl: markerIcon,
-  shadowUrl: markerShadow,
+  iconRetinaUrl: 'https://unpkg.com/leaflet@1.7.1/dist/images/marker-icon-2x.png',
+  iconUrl: 'https://unpkg.com/leaflet@1.7.1/dist/images/marker-icon.png',
+  shadowUrl: 'https://unpkg.com/leaflet@1.7.1/dist/images/marker-shadow.png',
 });
 
-// Custom marker icons
-const customMarkerIcon = new L.Icon({
-  iconUrl: markerIcon,
-  iconRetinaUrl: markerIcon2x,
-  shadowUrl: markerShadow,
+const createIcon = (iconUrl) => new L.Icon({
+  iconUrl,
+  shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
   iconSize: [25, 41],
   iconAnchor: [12, 41],
   popupAnchor: [1, -34],
-  shadowSize: [41, 41],
-  className: "user-marker",
+  shadowSize: [41, 41]
 });
 
-// Sample TPS3R data for Jakarta
-const tps3rLocations = [
-  {
-    id: 1,
-    name: "TPS3R Jakarta Pusat",
-    position: [-6.1862, 106.8345],
-    address: "Jl. Merdeka No. 1",
-  },
-  {
-    id: 2,
-    name: "TPS3R Jakarta Selatan",
-    position: [-6.2615, 106.8106],
-    address: "Jl. Sudirman Kav. 1",
-  },
-  {
-    id: 3,
-    name: "TPS3R Jakarta Barat",
-    position: [-6.1683, 106.7585],
-    address: "Jl. Kembangan Raya No. 5",
-  },
-  {
-    id: 4,
-    name: "TPS3R Jakarta Timur",
-    position: [-6.225, 106.9003],
-    address: "Jl. Cipinang Jaya No. 10",
-  },
-  {
-    id: 5,
-    name: "TPS3R Jakarta Utara",
-    position: [-6.1384, 106.8663],
-    address: "Jl. Pluit Raya No. 2",
-  },
-];
+const tps3rIcon = createIcon('https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-green.png');
+const recyclingIcon = createIcon('https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-blue.png');
+const userIcon = createIcon('https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-red.png');
 
-const ChangeView = ({ center, zoom }) => {
+const MapController = ({ center, zoom }) => {
   const map = useMap();
-  map.setView(center, zoom);
-  return null;
-};
-
-const Routing = ({ map, start, end }) => {
-  const routingControlRef = useRef();
-
   useEffect(() => {
-    if (!map || !start || !end) return;
-
-    routingControlRef.current = L.Routing.control({
-      waypoints: [L.latLng(start[0], start[1]), L.latLng(end[0], end[1])],
-      routeWhileDragging: false,
-      showAlternatives: false,
-      addWaypoints: false,
-      draggableWaypoints: false,
-      fitSelectedRoutes: true,
-      show: false,
-      lineOptions: {
-        styles: [{ color: "#3b82f6", weight: 5 }],
-      },
-      createMarker: () => null,
-    }).addTo(map);
-
-    return () => {
-      if (routingControlRef.current) {
-        map.removeControl(routingControlRef.current);
-      }
-    };
-  }, [map, start, end]);
-
+    map.setView(center, zoom);
+  }, [center, zoom, map]);
   return null;
 };
 
-const FindTPS3RPage = () => {
-  const [userPosition, setUserPosition] = useState(null);
-  const [placedMarker, setPlacedMarker] = useState(null);
-  const [nearestTps3r, setNearestTps3r] = useState([]);
-  const [loading, setLoading] = useState(true);
+const Tps3rPage = () => {
+  const { isAuthenticated, user } = useAuth();
+  const [locations, setLocations] = useState([]);
+  const [filter, setFilter] = useState('all');
+  const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [selectedTps3r, setSelectedTps3r] = useState(null);
-  const [showRoute, setShowRoute] = useState(false);
+  const [userLocation, setUserLocation] = useState(null);
+  const [showAddForm, setShowAddForm] = useState(false);
+  const [newLocation, setNewLocation] = useState({
+    name: '',
+    address: '',
+    lat: '',
+    lng: '',
+    type: 'TPS3R'
+  });
+  const [mapCenter, setMapCenter] = useState([-8.4095, 115.1889]);
+  const [mapZoom, setMapZoom] = useState(13);
   const mapRef = useRef();
 
-  // Default to Jakarta coordinates
-  const defaultCenter = [-6.2, 106.816666];
-  const defaultZoom = 12;
-
   useEffect(() => {
-    // Get user's current location
+    const fetchLocations = async () => {
+      try {
+        const response = await api.get('/map/locations');
+        setLocations(response.data);
+        setIsLoading(false);
+      } catch (err) {
+        console.error('Error:', err);
+        setError('Gagal memuat data lokasi');
+        setIsLoading(false);
+      }
+    };
+
+    if (isAuthenticated) fetchLocations();
+  }, [isAuthenticated]);
+
+  const handleMapClick = (e) => {
+    if (showAddForm) {
+      setNewLocation(prev => ({
+        ...prev,
+        lat: e.latlng.lat.toFixed(6),
+        lng: e.latlng.lng.toFixed(6)
+      }));
+    }
+  };
+
+  const handleLocateMe = () => {
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
-        (position) => {
-          const pos = [position.coords.latitude, position.coords.longitude];
-          setUserPosition(pos);
-          setLoading(false);
-          findNearestTps3r(pos);
+        position => {
+          const { latitude, longitude } = position.coords;
+          setUserLocation([latitude, longitude]);
+          setMapCenter([latitude, longitude]);
+          setMapZoom(15);
         },
-        (err) => {
-          console.error("Error getting location:", err);
-          setError(
-            "Tidak dapat mengakses lokasi Anda. Silakan klik peta untuk memilih lokasi."
-          );
-          setLoading(false);
+        error => {
+          console.error('Geolocation error:', error);
+          alert('Tidak dapat mengakses lokasi Anda. Pastikan izin lokasi diaktifkan.');
         }
       );
     } else {
-      setError(
-        "Browser tidak mendukung geolokasi. Silakan klik peta untuk memilih lokasi."
-      );
-      setLoading(false);
-    }
-  }, []);
-
-  // Function to calculate distance between two coordinates
-  const calculateDistance = (lat1, lon1, lat2, lon2) => {
-    const R = 6371; // Radius of the earth in km
-    const dLat = deg2rad(lat2 - lat1);
-    const dLon = deg2rad(lon2 - lon1);
-    const a =
-      Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-      Math.cos(deg2rad(lat1)) *
-        Math.cos(deg2rad(lat2)) *
-        Math.sin(dLon / 2) *
-        Math.sin(dLon / 2);
-    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-    return R * c; // Distance in km
-  };
-
-  const deg2rad = (deg) => {
-    return deg * (Math.PI / 180);
-  };
-
-  // Function to find nearest TPS3R locations
-  const findNearestTps3r = (position) => {
-    if (!position) return;
-
-    const withDistances = tps3rLocations.map((tps3r) => ({
-      ...tps3r,
-      distance: calculateDistance(
-        position[0],
-        position[1],
-        tps3r.position[0],
-        tps3r.position[1]
-      ),
-    }));
-
-    // Sort by distance and take top 5
-    const nearest = [...withDistances]
-      .sort((a, b) => a.distance - b.distance)
-      .slice(0, 5);
-
-    setNearestTps3r(nearest);
-  };
-
-  // Handle map click to place marker
-  const handleMapClick = (e) => {
-    const position = [e.latlng.lat, e.latlng.lng];
-    setPlacedMarker(position);
-    findNearestTps3r(position);
-    if (showRoute) {
-      setShowRoute(false);
-      setSelectedTps3r(null);
+      alert('Browser Anda tidak mendukung geolokasi.');
     }
   };
 
-  useEffect(() => {
-    const map = mapRef.current;
-    if (map) {
-      map.on("click", handleMapClick);
-      return () => {
-        map.off("click", handleMapClick);
-      };
-    }
-  }, [mapRef.current, showRoute]);
-
-  const handleShowRoute = (tps3r) => {
-    if (showRoute && selectedTps3r?.id === tps3r.id) {
-      setShowRoute(false);
-      setSelectedTps3r(null);
-    } else {
-      setSelectedTps3r(tps3r);
-      setShowRoute(true);
-      mapRef.current.flyTo(tps3r.position, 15);
+  const handleAddLocation = async (e) => {
+    e.preventDefault();
+    try {
+      if (newLocation.id) {
+        await api.put(`/map/locations/${newLocation.id}`, newLocation);
+      } else {
+        const response = await api.post('/map/locations', newLocation);
+        newLocation.id = response.data.id;
+      }
+      
+      setLocations(prev => {
+        const existing = prev.find(loc => loc.id === newLocation.id);
+        return existing ? prev.map(loc => loc.id === newLocation.id ? newLocation : loc) : [...prev, newLocation];
+      });
+      
+      setShowAddForm(false);
+      setNewLocation({
+        name: '',
+        address: '',
+        lat: '',
+        lng: '',
+        type: 'TPS3R'
+      });
+    } catch (err) {
+      console.error('Error saving location:', err);
+      alert('Gagal menyimpan lokasi');
     }
   };
 
-  const handleHideRoute = () => {
-    setShowRoute(false);
-    setSelectedTps3r(null);
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    setNewLocation(prev => ({ ...prev, [name]: value }));
   };
 
-  if (loading) {
+  if (!isAuthenticated) {
     return (
-      <div className="flex justify-center items-center h-screen">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Memuat peta dan lokasi TPS3R...</p>
+      <section className="auth-section">
+        <div className="beranda-container">
+          <div className="auth-required">
+            <h2>Anda perlu login untuk mengakses fitur ini</h2>
+            <p>Silakan login terlebih dahulu untuk melihat lokasi TPS3R.</p>
+          </div>
         </div>
-      </div>
+      </section>
     );
   }
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-800 mb-2">
-          Cari Lokasi TPS3R Terdekat di Jakarta
-        </h1>
-        <p className="text-gray-600">
-          Klik di peta untuk menandai lokasi Anda dan menemukan TPS3R terdekat
-        </p>
-      </div>
-
-      {error && (
-        <div
-          className="bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700 p-4 mb-6"
-          role="alert"
-        >
-          <p>{error}</p>
+    <section className="tps3r-section">
+      <div className="beranda-container">
+        <div className="tps3r-header">
+          <h2 className="section-title">Temukan TPS3R & Pusat Daur Ulang</h2>
+          <p className="section-subtitle">Lihat lokasi terdekat dan kelola data TPS3R</p>
         </div>
-      )}
 
-      <div className="bg-white rounded-lg shadow-md overflow-hidden mb-8">
-        <div className="h-96 w-full relative">
-          <MapContainer
-            center={userPosition || defaultCenter}
-            zoom={defaultZoom}
-            scrollWheelZoom={true}
-            className="h-full w-full"
-            whenCreated={(map) => {
-              mapRef.current = map;
-            }}
-          >
-            <ChangeView
-              center={userPosition || defaultCenter}
-              zoom={defaultZoom}
-            />
-            <TileLayer
-              url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-              attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-            />
-
-            {/* User position marker */}
-            {userPosition && (
-              <Marker position={userPosition}>
-                <Popup>Lokasi Anda Saat Ini</Popup>
-              </Marker>
-            )}
-
-            {/* User-placed marker */}
-            {placedMarker && (
-              <Marker position={placedMarker} icon={customMarkerIcon}>
-                <Popup>Lokasi yang Anda pilih</Popup>
-              </Marker>
-            )}
-
-            {/* TPS3R markers */}
-            {nearestTps3r.map((tps3r) => (
-              <Marker key={tps3r.id} position={tps3r.position}>
-                <Popup>
-                  <div className="space-y-1">
-                    <h3 className="font-bold text-blue-600">{tps3r.name}</h3>
-                    <p className="text-sm">{tps3r.address}</p>
-                    <p className="text-xs text-gray-500">
-                      Jarak: {tps3r.distance.toFixed(2)} km
-                    </p>
-                    <button
-                      className="mt-2 px-3 py-1 bg-blue-500 text-white rounded text-sm hover:bg-blue-600 transition"
-                      onClick={() => handleShowRoute(tps3r)}
-                    >
-                      {showRoute && selectedTps3r?.id === tps3r.id
-                        ? "Sembunyikan Rute"
-                        : "Lihat Rute"}
-                    </button>
-                  </div>
-                </Popup>
-              </Marker>
-            ))}
-
-            {/* Routing */}
-            {showRoute && selectedTps3r && (
-              <Routing
-                map={mapRef.current}
-                start={placedMarker || userPosition}
-                end={selectedTps3r.position}
-              />
-            )}
-          </MapContainer>
-        </div>
-      </div>
-
-      {/* Route control panel */}
-      {showRoute && selectedTps3r && (
-        <div className="bg-blue-50 p-4 rounded-lg mb-6">
-          <div className="flex justify-between items-center">
-            <div>
-              <h3 className="font-bold text-blue-800">
-                Rute ke {selectedTps3r.name}
-              </h3>
-              <p className="text-sm text-blue-700">
-                {selectedTps3r.address} ({selectedTps3r.distance.toFixed(2)} km)
-              </p>
-            </div>
-            <button
-              className="px-3 py-1 bg-blue-500 text-white rounded text-sm hover:bg-blue-600 transition"
-              onClick={handleHideRoute}
+        <div className="map-controls">
+          <div className="filter-controls">
+            <button 
+              className={`filter-btn ${filter === 'all' ? 'active' : ''}`}
+              onClick={() => setFilter('all')}
             >
-              Tutup Rute
+              Semua
+            </button>
+            <button 
+              className={`filter-btn ${filter === 'TPS3R' ? 'active' : ''}`}
+              onClick={() => setFilter('TPS3R')}
+            >
+              TPS3R
+            </button>
+            <button 
+              className={`filter-btn ${filter === 'Recycling Center' ? 'active' : ''}`}
+              onClick={() => setFilter('Recycling Center')}
+            >
+              Daur Ulang
+            </button>
+            <button 
+              className="primary-button locate-btn"
+              onClick={handleLocateMe}
+            >
+              <i className="fas fa-location-arrow"></i> Lokasi Saya
+            </button>
+            
+            {user?.role === 'admin' && (
+              <button 
+                className={`primary-button ${showAddForm ? 'cancel-btn' : 'add-btn'}`}
+                onClick={() => setShowAddForm(!showAddForm)}
+              >
+                {showAddForm ? (
+                  <><i className="fas fa-times"></i> Batal</>
+                ) : (
+                  <><i className="fas fa-plus"></i> Tambah Lokasi</>
+                )}
+              </button>
+            )}
+          </div>
+        </div>
+
+        {showAddForm && (
+          <div className="add-location-form">
+            <h3>{newLocation.id ? 'Edit Lokasi' : 'Tambah Lokasi Baru'}</h3>
+            <form onSubmit={handleAddLocation}>
+              <div className="form-group">
+                <label>Nama Lokasi</label>
+                <input
+                  type="text"
+                  name="name"
+                  value={newLocation.name}
+                  onChange={handleInputChange}
+                  required
+                />
+              </div>
+              <div className="form-group">
+                <label>Alamat</label>
+                <textarea
+                  name="address"
+                  value={newLocation.address}
+                  onChange={handleInputChange}
+                  required
+                />
+              </div>
+              <div className="form-group">
+                <label>Koordinat</label>
+                <div className="coordinate-inputs">
+                  <input
+                    type="number"
+                    name="lat"
+                    placeholder="Latitude"
+                    step="any"
+                    value={newLocation.lat}
+                    onChange={handleInputChange}
+                    required
+                  />
+                  <input
+                    type="number"
+                    name="lng"
+                    placeholder="Longitude"
+                    step="any"
+                    value={newLocation.lng}
+                    onChange={handleInputChange}
+                    required
+                  />
+                </div>
+                <small>Klik peta untuk menentukan koordinat</small>
+              </div>
+              <div className="form-group">
+                <label>Tipe Lokasi</label>
+                <select
+                  name="type"
+                  value={newLocation.type}
+                  onChange={handleInputChange}
+                  required
+                >
+                  <option value="TPS3R">TPS3R</option>
+                  <option value="Recycling Center">Pusat Daur Ulang</option>
+                </select>
+              </div>
+              <div className="form-actions">
+                <button type="submit" className="primary-button">
+                  <i className="fas fa-save"></i> Simpan
+                </button>
+                <button 
+                  type="button" 
+                  className="secondary-button"
+                  onClick={() => {
+                    setShowAddForm(false);
+                    setNewLocation({
+                      name: '',
+                      address: '',
+                      lat: '',
+                      lng: '',
+                      type: 'TPS3R'
+                    });
+                  }}
+                >
+                  <i className="fas fa-times"></i> Batal
+                </button>
+              </div>
+            </form>
+          </div>
+        )}
+
+        {isLoading ? (
+          <div className="loading-indicator">
+            <div className="spinner"></div>
+            <p>Memuat data lokasi...</p>
+          </div>
+        ) : error ? (
+          <div className="error-message">
+            <p>{error}</p>
+            <button className="primary-button" onClick={() => window.location.reload()}>
+              <i className="fas fa-sync-alt"></i> Coba Lagi
             </button>
           </div>
-        </div>
-      )}
-
-      {placedMarker && (
-        <div className="mt-8">
-          <h2 className="text-xl font-semibold text-gray-800 mb-4">
-            TPS3R Terdekat dari Lokasi yang Dipilih
-          </h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {nearestTps3r.map((tps3r) => (
-              <div
-                key={tps3r.id}
-                className="bg-white p-4 rounded-lg shadow hover:shadow-md transition"
+        ) : (
+          <div className="map-content-container">
+            <div className="map-container">
+              <MapContainer
+                center={mapCenter}
+                zoom={mapZoom}
+                style={{ height: '100%', width: '100%' }}
+                whenCreated={map => { mapRef.current = map; }}
+                onClick={handleMapClick}
               >
-                <h3 className="font-bold text-gray-800">{tps3r.name}</h3>
-                <p className="text-sm text-gray-600 mt-1">{tps3r.address}</p>
-                <div className="flex justify-between items-center mt-3">
-                  <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded">
-                    {tps3r.distance.toFixed(2)} km
-                  </span>
-                  <button
-                    className="text-blue-500 text-sm font-medium hover:text-blue-700"
-                    onClick={() => {
-                      mapRef.current.flyTo(tps3r.position, 15);
-                    }}
-                  >
-                    Lihat di Peta
-                  </button>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
+                <MapController center={mapCenter} zoom={mapZoom} />
+                <TileLayer
+                  url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                  attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+                />
+                
+                {userLocation && (
+                  <Marker position={userLocation} icon={userIcon}>
+                    <Popup>Lokasi Anda</Popup>
+                  </Marker>
+                )}
 
-      {!placedMarker && (
-        <div className="bg-blue-50 p-4 rounded-lg text-center">
-          <p className="text-blue-800">
-            Klik di peta untuk memilih lokasi dan melihat TPS3R terdekat
-          </p>
-        </div>
-      )}
-    </div>
+                {locations.filter(loc => filter === 'all' || loc.type === filter)
+                  .map(location => (
+                    <Marker
+                      key={location.id}
+                      position={[parseFloat(location.lat), parseFloat(location.lng)]}
+                      icon={location.type === 'TPS3R' ? tps3rIcon : recyclingIcon}
+                    >
+                      <Popup>
+                        <b>{location.name}</b><br />
+                        {location.address}<br />
+                        <small>Tipe: {location.type}</small>
+                        {user?.role === 'admin' && (
+                          <div className="popup-actions">
+                            <button onClick={() => {
+                              setNewLocation(location);
+                              setShowAddForm(true);
+                            }}>
+                              <i className="fas fa-edit"></i> Edit
+                            </button>
+                            <button onClick={async () => {
+                              if (window.confirm('Apakah Anda yakin ingin menghapus lokasi ini?')) {
+                                try {
+                                  await api.delete(`/map/locations/${location.id}`);
+                                  setLocations(prev => prev.filter(loc => loc.id !== location.id));
+                                } catch (err) {
+                                  console.error('Error deleting location:', err);
+                                  alert('Gagal menghapus lokasi');
+                                }
+                              }
+                            }}>
+                              <i className="fas fa-trash"></i> Hapus
+                            </button>
+                          </div>
+                        )}
+                      </Popup>
+                    </Marker>
+                  ))}
+              </MapContainer>
+            </div>
+
+            <div className="location-list">
+              <div className="list-header">
+                <h3 className="list-title">Daftar Lokasi {filter !== 'all' && `(${filter})`}</h3>
+              </div>
+              <div className="location-grid">
+                {locations
+                  .filter(loc => filter === 'all' || loc.type === filter)
+                  .map(location => (
+                    <div 
+                      key={location.id} 
+                      className="location-card"
+                      onClick={() => {
+                        setMapCenter([parseFloat(location.lat), parseFloat(location.lng)]);
+                        setMapZoom(15);
+                      }}
+                    >
+                      <div className="location-info">
+                        <h4>{location.name}</h4>
+                        <p className="location-address">{location.address}</p>
+                        <div className="location-meta">
+                          <span className={`location-type ${location.type.replace(' ', '-').toLowerCase()}`}>
+                            {location.type}
+                          </span>
+                        </div>
+                      </div>
+                      {user?.role === 'admin' && (
+                        <div className="location-actions">
+                          <button 
+                            className="edit-btn"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setNewLocation(location);
+                              setShowAddForm(true);
+                            }}
+                          >
+                            <i className="fas fa-edit"></i>
+                          </button>
+                          <button 
+                            className="delete-btn"
+                            onClick={async (e) => {
+                              e.stopPropagation();
+                              if (window.confirm('Apakah Anda yakin ingin menghapus lokasi ini?')) {
+                                try {
+                                  await api.delete(`/map/locations/${location.id}`);
+                                  setLocations(prev => prev.filter(loc => loc.id !== location.id));
+                                } catch (err) {
+                                  console.error('Error deleting location:', err);
+                                  alert('Gagal menghapus lokasi');
+                                }
+                              }
+                            }}
+                          >
+                            <i className="fas fa-trash"></i>
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+    </section>
   );
 };
 
-export default FindTPS3RPage;
+export default Tps3rPage;

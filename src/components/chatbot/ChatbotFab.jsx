@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
-import { FaComment, FaTimes, FaPaperPlane, FaRedo } from 'react-icons/fa';
+import { FaComment, FaTimes, FaRedo } from 'react-icons/fa';
 import '../../styles/ChatbotFab.css'; // Pastikan path ini benar
-//clear done dari json
+
 // DATA SAMPAH LENGKAP 
 const wasteData = {
     "responses": {
@@ -115,6 +115,7 @@ const wasteData = {
 };
 
 const ChatbotFab = () => {
+  const { isAuthenticated } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
   const [conversation, setConversation] = useState({
     currentStep: 0,
@@ -181,10 +182,9 @@ const ChatbotFab = () => {
       { 
         conclusion: 'Panduan untuk {technicalHelpTopic}:\n\n{technicalSolution}\n\nJika masalah berlanjut, coba refresh halaman atau hubungi dukungan.',
         technicalSolutions: { 
-            'Cara  Klasifikasi Gambar': 'Di halaman utama, cari tombol "Pindai Sampah" dan klik Mulai Kamera. Lalu coba foto sampah yang ingin anda ketahui dan Tunggu proses analisis selesai.',
+            'Cara Klasifikasi Gambar': 'Di halaman utama, cari tombol "Pindai Sampah" dan klik Mulai Kamera. Lalu coba foto sampah yang ingin anda ketahui dan Tunggu proses analisis selesai.',
             'Menginterpretasi Hasil Klasifikasi': 'Hasil akan menampilkan prediksi jenis sampah, persentase keyakinan, dan saran pengelolaan',
             'Navigasi Menu dan Halaman': 'Gunakan menu utama di bagian atas halaman untuk berpindah antar fitur',
-      
         }
       }
     ],
@@ -193,9 +193,10 @@ const ChatbotFab = () => {
         conclusion: 'WasteBot adalah asisten yang dirancang untuk membantu Anda dalam mengidentifikasi sampah, mendapatkan informasi daur ulang, dan menemukan fasilitas pengelolaan sampah. Proyek ini bertujuan untuk meningkatkan kesadaran dan partisipasi masyarakat dalam pengelolaan sampah yang bertanggung jawab. Kami menggunakan teknologi machine learning untuk klasifikasi sampah (catatan: model masih dalam pengembangan dan terus ditingkatkan). Untuk lebih detail, kunjungi halaman "Tentang Kami" di website.',
       }
     ],
+    // === PERUBAHAN DI SINI ===
     'Hubungi Dukungan': [
       {
-        conclusion: 'Jika Anda mengalami masalah teknis yang tidak terjawab di sini, memiliki pertanyaan lebih lanjut, atau ingin memberikan feedback, silakan hubungi kami melalui:\n- Email: support@wastesnap.com \n- Formulir Kontak di halaman "Hubungi Kami"\n\nKami akan berusaha merespons secepatnya.',
+        conclusion: 'Jika Anda mengalami masalah teknis yang tidak terjawab di sini, memiliki pertanyaan lebih lanjut, atau ingin memberikan feedback, silakan hubungi kami melalui:\n- Email: support@wastesnap.com\n- [WHATSAPP_LINK]\n\nKami akan berusaha merespons secepatnya.',
       }
     ],
     'Jelajahi Detail Jenis Sampah': [
@@ -421,14 +422,12 @@ const ChatbotFab = () => {
     }
   
     const specificAnswersForFlow = answers.slice(relevantAnswersStartIndex);
-    const answerKeyForSpecificData = specificAnswersForFlow.join('-');
   
     if (flowStep.infoDetails) { 
       const topicKey = specificAnswersForFlow[specificAnswersForFlow.length - 1]; 
       conclusion = conclusion.replace('{infoDetail}', flowStep.infoDetails[topicKey] || 'Detail info tidak tersedia.');
     } else if (flowStep.technicalSolutions) { 
       const topicKey = specificAnswersForFlow[specificAnswersForFlow.length - 1]; 
-      // Cek apakah topicKey ada di technicalSolutions sebelum mengganti
       const solutionText = flowStep.technicalSolutions[topicKey] || 'Solusi teknis untuk topik ini tidak tersedia.';
       conclusion = conclusion.replace('{technicalSolution}', solutionText);
     }
@@ -509,6 +508,10 @@ const ChatbotFab = () => {
     setIsOpen(!isOpen);
   };
 
+   if (!isAuthenticated) {
+    return null;
+  }
+
   return (
     <>
       <div
@@ -542,12 +545,27 @@ const ChatbotFab = () => {
           <div className="chatbot-messages">
             {messages.map((msg) => (
                 <div key={msg.id} className={`message ${msg.sender}`}>
-                  {msg.text.split('\n').map((line, i) => (
-                    <p key={i}>{line}</p>
-                  ))}
-                  {msg.options && msg.options.length > 0 && // Pastikan options ada dan tidak kosong
+                  {/* === PERUBAHAN DI SINI === */}
+                  {msg.text.split('\n').map((line, i) => {
+                    if (line.trim() === '- [WHATSAPP_LINK]') {
+                      const phoneNumber = '6288262749061'; 
+                      const message = encodeURIComponent('hai, saya ingin komplain');
+                      const waLink = `https://wa.me/${phoneNumber}?text=${message}`;
+
+                      return (
+                        <p key={i}>
+                          - WhatsApp: <a href={waLink} target="_blank" rel="noopener noreferrer">
+                            Klik di sini untuk komplain
+                          </a>
+                        </p>
+                      );
+                    }
+                    return <p key={i}>{line}</p>;
+                  })}
+
+                  {msg.options && msg.options.length > 0 &&
                       (!conversation.isComplete || 
-                       (conversation.isComplete && msg.id === initialBotMessageId && messages.length ===1 )) && (
+                       (conversation.isComplete && msg.id === initialBotMessageId && messages.length === 1)) && (
                     <div className="message-options">
                       {msg.options.map((optionText, index) => (
                         <button

@@ -90,6 +90,110 @@ h2 {
   flex-wrap: wrap;
 }
 
+/* Layout untuk Chart dan Form */
+.chart-and-form-section {
+  display: flex;
+  flex-direction: row-reverse;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 2rem;
+  flex-wrap: wrap;
+  padding: 2rem;
+}
+
+.chart-container {
+  flex: 3; /* Grafik jadi lebih lebar */
+  background-color: white;
+  padding: 20px;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  min-width: 400px;
+}
+
+.form-container {
+  flex: 1; /* Form dropdown lebih sempit */
+  background-color: white;
+  padding: 20px;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(126, 126, 126, 0.1);
+  min-width: 250px;
+}
+
+.form-group {
+  margin-bottom: 20px;
+}
+
+.select-wrapper {
+  position: relative;
+  display: inline-block;
+  width: 100%; 
+}
+
+.select-wrapper::after {
+  content: '▼'; 
+  font-size: 10px;
+  color: #333;
+  position: absolute;
+  top: 50%;
+  right: 15px;
+  transform: translateY(-50%);
+  pointer-events: none; 
+}
+
+.select-wrapper select {
+
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+  width: 100%;
+  padding: 12px 40px 12px 15px;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  background-color: white;
+  font-size: 0,5rem;
+  cursor: pointer;
+  transition: border-color 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+}
+
+.select-wrapper select:hover {
+  border-color: #2e437d;
+}
+
+.select-wrapper select:focus {
+  outline: none;
+}
+
+.select-wrapper select::-ms-expand {
+  display: none;
+}
+
+/* Mobile and small screen adjustments */
+@media (max-width: 768px) {
+  .chart-and-form-section {
+    flex-direction: column;  /* Di layar kecil, chart dan form akan ditampilkan secara vertikal */
+    gap: 1rem;
+  }
+
+  .chart-container, .form-container {
+    width: 100%;
+  }
+}
+
+/* Adjustments for very small screens (mobile phones) */
+@media (max-width: 480px) {
+  .chart-and-form-section {
+    padding: 1rem;
+  }
+
+  .form-container {
+    padding: 1rem;
+  }
+
+  .chart-container {
+    padding: 1rem;
+  }
+}
+
 /* Button Styles */
 .primary-button,
 .secondary-button {
