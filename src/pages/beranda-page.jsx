@@ -3,7 +3,6 @@ import {
   FaMapMarkerAlt,
   FaNewspaper,
   FaArrowRight,
-  FaThList,
 } from "react-icons/fa";
 import React, { useState, useEffect } from "react";
 import { useAuth } from "../context/AuthContext";
@@ -23,7 +22,7 @@ import {
   Legend,
 } from "chart.js";
 
-// Register Chart.js components
+// Register komponen Chart.js yang dibutuhkan
 ChartJS.register(
   CategoryScale,
   LinearScale,
@@ -51,93 +50,110 @@ const daftarProvinsi = [
 const BerandaPage = () => {
   const { isAuthenticated, isLoading } = useAuth();
   
-  // State untuk pilihan provinsi
   const [provinsi, setProvinsi] = useState("Aceh");
 
-  // State untuk data chart
   const [allChartData, setAllChartData] = useState([]);
+  const [predictionData, setPredictionData] = useState([]);
   const [chartData, setChartData] = useState({ labels: [], datasets: [] });
   const [isChartLoading, setIsChartLoading] = useState(true);
 
-  // Mengambil data dari CSV saat komponen pertama kali dimuat
   useEffect(() => {
-    const fetchData = async () => {
-      setIsChartLoading(true);
-      try {
-        const response = await fetch("/data_provinsi.csv");
-        const reader = response.body.getReader();
-        const result = await reader.read();
-        const decoder = new TextDecoder("utf-8");
-        const csv = decoder.decode(result.value);
-
-        Papa.parse(csv, {
+    const parseCsv = async (url) => {
+      const response = await fetch(url);
+      if (!response.ok) {
+        throw new Error(`Gagal memuat CSV: ${url} - Status: ${response.status}`);
+      }
+      const csvText = await response.text();
+      return new Promise((resolve, reject) => {
+        Papa.parse(csvText, {
           header: true,
           dynamicTyping: true,
           skipEmptyLines: true,
-          complete: (results) => {
-            setAllChartData(results.data);
-            setIsChartLoading(false);
-          },
+          complete: (results) => resolve(results.data),
+          error: (error) => reject(error),
         });
+      });
+    };
+
+    const fetchData = async () => {
+      setIsChartLoading(true);
+      try {
+        const [historicalData, newPredictionData] = await Promise.all([
+          parseCsv("/data_provinsi.csv"),
+          // PASTIKAN NAMA FILE INI SAMA PERSIS dengan file di folder /public
+          parseCsv("/predictions_2025.csv"), 
+        ]);
+
+        setAllChartData(historicalData);
+        setPredictionData(newPredictionData);
+        
       } catch (error) {
+        // Tampilkan error di console agar mudah di-debug
         console.error("Gagal mengambil atau mengurai data CSV:", error);
+      } finally {
         setIsChartLoading(false);
       }
     };
     fetchData();
   }, []);
 
-  // PERBAIKAN UTAMA: Logika untuk membuat 3 garis grafik
   useEffect(() => {
-    if (allChartData.length === 0) return;
+    if (allChartData.length === 0 || predictionData.length === 0) return;
 
-    // 1. Definisikan tahun yang ingin kita bandingkan
-    const relevantYears = [2022, 2023, 2024];
+    const historicalYears = [2022, 2023, 2024];
     
-    // 2. Filter semua data yang relevan (hanya provinsi terpilih & dari tahun-tahun di atas)
-    const provinceData = allChartData.filter(
-      (row) => row.nama_provinsi === provinsi && relevantYears.includes(row.tahun)
+    // 1. Filter data berdasarkan provinsi yang dipilih
+    const provinceHistoricalData = allChartData.filter(
+      (row) => row.nama_provinsi === provinsi && historicalYears.includes(row.tahun)
+    );
+    const provincePredictionData = predictionData.filter(
+      (row) => row.nama_provinsi === provinsi && row.tahun === 2025
     );
 
-    // 3. Buat daftar unik semua 'jenis_sampah' sebagai label sumbu X.
-    // Ini memastikan semua jenis sampah dari 3 tahun ditampilkan di sumbu X.
-    const labels = [...new Set(provinceData.map(d => d.jenis_sampah))].sort();
+    // 2. Buat sumbu X yang konsisten dari semua jenis sampah yang ada
+    const historicalLabels = provinceHistoricalData.map(d => d.jenis_sampah);
+    const predictionLabels = provincePredictionData.map(d => d.jenis_sampah);
+    const labels = [...new Set([...historicalLabels, ...predictionLabels])].sort();
 
-    // 4. Siapkan warna berbeda untuk setiap tahun
     const lineColors = {
-      2022: 'rgba(255, 99, 132, 1)',  // Merah
-      2023: 'rgba(54, 162, 235, 1)',  // Biru
-      2024: 'rgba(75, 192, 192, 1)',  // Hijau/Teal
+      2022: 'rgba(255, 99, 132, 1)',
+      2023: 'rgba(54, 162, 235, 1)',
+      2024: 'rgba(75, 192, 192, 1)',
+      2025: 'rgba(153, 102, 255, 1)',
     };
 
-    // 5. Buat dataset terpisah untuk setiap tahun
-    const datasets = relevantYears.map(year => {
-      // Untuk setiap label sumbu X, cari data persentasenya di tahun ini
+    // 3. Buat dataset untuk setiap tahun, memetakan ke sumbu X yang sama
+    const historicalDatasets = historicalYears.map(year => {
       const dataForYear = labels.map(label => {
-        const dataPoint = provinceData.find(
+        const dataPoint = provinceHistoricalData.find(
           d => d.tahun === year && d.jenis_sampah === label
         );
-        // Jika data untuk jenis sampah ini tidak ada di tahun ini, kembalikan null
-        // Chart.js akan membuat garis terputus untuk data null.
         return dataPoint ? dataPoint.persentase : null;
       });
-
       return {
-        label: `Tahun ${year}`,
-        data: dataForYear,
-        borderColor: lineColors[year],
-        backgroundColor: lineColors[year].replace('1)', '0.2)'), // Warna transparan untuk tooltip/area
-        fill: false, // Set 'false' agar garis tidak saling menutupi
-        tension: 0.1,
+        label: `Tahun ${year}`, data: dataForYear, borderColor: lineColors[year],
+        backgroundColor: lineColors[year].replace('1)', '0.2)'), fill: false, tension: 0.1,
       };
     });
     
-    // 6. Update state chart dengan format multi-garis yang baru
-    setChartData({ labels, datasets });
+    const predictionDataset = {
+      label: 'Prediksi 2025',
+      data: labels.map(label => {
+        const dataPoint = provincePredictionData.find(d => d.jenis_sampah === label);
+        return dataPoint ? dataPoint.persentase : null;
+      }),
+      borderColor: lineColors[2025],
+      backgroundColor: lineColors[2025].replace('1)', '0.2)'),
+      fill: false, tension: 0.1, borderDash: [5, 5],
+    };
+    
+    setChartData({
+      labels,
+      datasets: [...historicalDatasets, predictionDataset],
+    });
 
-  }, [provinsi, allChartData]); // Jalankan ulang saat provinsi atau data utama berubah
+  }, [provinsi, allChartData, predictionData]);
 
-  // Handler untuk mengubah state provinsi
   const handleProvinsiChange = (event) => {
     setProvinsi(event.target.value);
   };
@@ -151,53 +167,24 @@ const BerandaPage = () => {
     );
   }
 
-  // Opsi konfigurasi chart
   const options = {
-    responsive: true,
-    maintainAspectRatio: false,
+    responsive: true, maintainAspectRatio: false,
     plugins: {
-      legend: {
-        position: "bottom",
-      },
-      title: {
-        display: true,
-        // Judul diubah agar lebih deskriptif
-        text: `Komposisi Sampah di ${provinsi} tahun 2022-2024`,
-        font: { size: 16 },
-      },
+      legend: { position: "bottom" },
+      title: { display: true, text: `Komposisi Sampah di ${provinsi} (2022-2024) & Prediksi 2025`, font: { size: 16 } },
       tooltip: {
         callbacks: {
-          label: function (tooltipItem) {
-            return `${tooltipItem.dataset.label}: ${tooltipItem.raw}%`;
-          },
+          label: (tooltipItem) => `${tooltipItem.dataset.label}: ${tooltipItem.raw}%`,
         },
       },
     },
     scales: {
-      y: {
-        beginAtZero: true,
-        title: {
-          display: true,
-          text: "Persentase (%)",
-        },
-      },
-      x: {
-        title: {
-          display: true,
-          text: "Jenis Sampah",
-        },
-      },
+      y: { beginAtZero: true, title: { display: true, text: "Persentase (%)" } },
+      x: { title: { display: true, text: "Jenis Sampah" } },
     },
   };
-  if (isLoading) {
-    return (
-      <div className="loading-container">
-        <div className="loading-spinner"></div>
-        <p>Memeriksa status login...</p>
-      </div>
-    );
-  }
 
+  // ... Sisa JSX tidak berubah ...
   return (
     <div className="beranda-container">
       {/* Hero Section */}
@@ -232,13 +219,13 @@ const BerandaPage = () => {
           <h2>Grafik Komposisi Sampah</h2>
           {isChartLoading ? (
             <p>Memuat data chart...</p>
-          ) : // Pengecekan yang lebih baik untuk data multi-garis
+          ) : 
             chartData.datasets.length > 0 && chartData.datasets.some(ds => ds.data.some(d => d !== null)) ? (
-            <div style={{ position: "relative", height: "300px" }}>
+            <div style={{ position: "relative", height: "400px" }}>
               <Line data={chartData} options={options} />
             </div>
           ) : (
-            <p>Data untuk {provinsi} pada tahun 2022-2024 tidak ditemukan.</p>
+            <p>Data untuk {provinsi} tidak ditemukan.</p>
           )}
         </div>
 
@@ -264,23 +251,17 @@ const BerandaPage = () => {
         <h2 className="judul">Fitur Unggulan</h2>
         <div className="features-grid">
           <div className="feature-card">
-            <div className="feature-icon">
-              <FaRecycle />
-            </div>
+            <div className="feature-icon"><FaRecycle /></div>
             <h3>Pemilahan Sampah</h3>
             <p>Ketahui jenis sampah Anda melalui pemindaian cerdas</p>
           </div>
           <div className="feature-card">
-            <div className="feature-icon">
-              <FaMapMarkerAlt />
-            </div>
+            <div className="feature-icon"><FaMapMarkerAlt /></div>
             <h3>Lokasi TPS3R</h3>
             <p>Temukan tempat pembuangan sampah terdekat di sekitar Anda</p>
           </div>
           <div className="feature-card">
-            <div className="feature-icon">
-              <FaNewspaper />
-            </div>
+            <div className="feature-icon"><FaNewspaper /></div>
             <h3>Informasi Terkini</h3>
             <p>Update terbaru seputar pengelolaan sampah</p>
           </div>
@@ -297,9 +278,7 @@ const BerandaPage = () => {
               <h3>Pindai Sampah</h3>
               <p>Gunakan kamera untuk memindai jenis sampah Anda</p>
               {isAuthenticated && (
-                <Link to="/pindai" className="step-button">
-                  Coba Sekarang
-                </Link>
+                <Link to="/pindai" className="step-button">Coba Sekarang</Link>
               )}
             </div>
           </div>
@@ -309,9 +288,7 @@ const BerandaPage = () => {
               <h3>Dapatkan Informasi</h3>
               <p>Sistem akan mengenali jenis sampah dan cara pembuangannya</p>
               {isAuthenticated && (
-                <Link to="/informasi" className="step-button">
-                  Coba Sekarang
-                </Link>
+                <Link to="/informasi" className="step-button">Coba Sekarang</Link>
               )}
             </div>
           </div>
@@ -321,9 +298,7 @@ const BerandaPage = () => {
               <h3>Temukan TPS3R</h3>
               <p>Lihat lokasi pembuangan terdekat berdasarkan jenis sampah</p>
               {isAuthenticated && (
-                <Link to="/temukan-tps3r" className="step-button">
-                  Coba Sekarang
-                </Link>
+                <Link to="/temukan-tps3r" className="step-button">Coba Sekarang</Link>
               )}
             </div>
           </div>
@@ -335,25 +310,16 @@ const BerandaPage = () => {
         <section className="cta-section">
           <div className="cta-content">
             <h2>Temukan Lebih Banyak Fitur</h2>
-            <p>
-              Temukan beragam fitur unggulan WasteSnap untuk pengelolaan sampah
-              yang lebih cerdas, cepat, dan berkelanjutan. Dengan mengelola
-              limbah secara efisien
-            </p>
+            <p>Temukan beragam fitur unggulan WasteSnap untuk pengelolaan sampah yang lebih cerdas, cepat, dan berkelanjutan. Dengan mengelola limbah secara efisien</p>
           </div>
         </section>
       ) : (
         <section className="cta-section">
           <div className="cta-content">
             <h2>Siap Mengelola Sampah dengan Lebih Baik?</h2>
-            <p>
-              Bergabunglah dengan WasteSnap sekarang dan mulai berkontribusi
-              untuk lingkungan yang lebih bersih
-            </p>
+            <p>Bergabunglah dengan WasteSnap sekarang dan mulai berkontribusi untuk lingkungan yang lebih bersih</p>
             <div className="cta-buttons">
-              <Link to="/register" className="secondary-button">
-                Daftar Sekarang
-              </Link>
+              <Link to="/register" className="secondary-button">Daftar Sekarang</Link>
             </div>
           </div>
         </section>
@@ -362,4 +328,4 @@ const BerandaPage = () => {
   );
 };
 
-export default BerandaPage;
+export default BerandaPage
