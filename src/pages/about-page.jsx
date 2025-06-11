@@ -57,7 +57,7 @@ const AboutPage = () => {
           <div className="content-wrapper">
             {/* Kiri: Judul dan Deskripsi */}
             <div className="team-text">
-              <h2 className="section-title">Tim Developt</h2>
+              <h2 className="section-title">Tim Pengembang</h2>
               <p className="team-description">
                 Dalam pengembangan web ini kami terdiri dari 6 anggota developt,
                 yaitu 3 <strong>frontend Backend (FEBE)</strong> dan 3{" "}

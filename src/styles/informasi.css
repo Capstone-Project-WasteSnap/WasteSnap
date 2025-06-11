@@ -2,8 +2,11 @@
 .informasi-page {
   max-width: 1200px;
   margin: 0 auto;
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
   color: #333;
+  padding-top: 15px;
+  
+  animation: fadeIn 0.6s ease-in-out;
 }
 
 /* Header Container */
@@ -102,8 +105,12 @@
 }
 
 @keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
 }
 
 /* Error message */
@@ -128,7 +135,7 @@
 
 /* Add Button */
 .btn-add {
-  background: #2ecc71;
+  background: #3498db;
   color: white;
   border: none;
   padding: 0.7rem 1.5rem;
@@ -142,7 +149,7 @@
 }
 
 .btn-add:hover {
-  background: #27ae60;
+  background: #0769a9;
 }
 
 /* Events Grid */
@@ -212,7 +219,7 @@
 }
 
 .card-date::before {
-  content: '📅';
+  content: "📅";
   margin-right: 0.2rem;
 }
 
@@ -453,6 +460,9 @@
   background: #27ae60;
 }
 
+
+
+
 /* Responsive Adjustments */
 @media (max-width: 768px) {
   .card-header,
@@ -460,23 +470,23 @@
   .card-footer {
     padding: 1rem;
   }
-  
+
   .card-title {
     font-size: 1.2rem;
   }
-  
+
   .informasi-page {
     padding: 1rem;
   }
-  
+
   .page-header h1 {
     font-size: 2rem;
   }
-  
+
   .informasi-grid {
     grid-template-columns: 1fr;
   }
-  
+
   .modal-content {
     max-width: 95%;
   }
@@ -497,7 +507,7 @@
   .card-footer {
     padding: 1rem;
   }
-  
+
   .modal-body {
     padding: 1rem;
   }
