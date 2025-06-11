@@ -99,24 +99,27 @@ h2 {
   gap: 2rem;
   flex-wrap: wrap;
   padding: 2rem;
+  box-sizing: border-box;
+  padding-top: 90px;
+  padding-bottom: 120px;
 }
 
 .chart-container {
-  flex: 3; /* Grafik jadi lebih lebar */
+  flex: 1 1 65%; /* Grafik mengambil lebih banyak ruang */
   background-color: white;
   padding: 20px;
   border-radius: 8px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-  min-width: 400px;
+  min-width: 0; /* Membuat flexbox shrink properly */
 }
 
 .form-container {
-  flex: 1; /* Form dropdown lebih sempit */
+  flex: 1 1 30%; /* Form mengambil lebih sedikit ruang */
   background-color: white;
   padding: 20px;
   border-radius: 8px;
   box-shadow: 0 4px 12px rgba(126, 126, 126, 0.1);
-  min-width: 250px;
+  min-width: 0; /* Membuat flexbox shrink properly */
 }
 
 .form-group {
@@ -126,22 +129,21 @@ h2 {
 .select-wrapper {
   position: relative;
   display: inline-block;
-  width: 100%; 
+  width: 100%;
 }
 
 .select-wrapper::after {
-  content: '▼'; 
+  content: "▼";
   font-size: 10px;
   color: #333;
   position: absolute;
   top: 50%;
   right: 15px;
   transform: translateY(-50%);
-  pointer-events: none; 
+  pointer-events: none;
 }
 
 .select-wrapper select {
-
   -webkit-appearance: none;
   -moz-appearance: none;
   appearance: none;
@@ -150,7 +152,7 @@ h2 {
   border: 1px solid #ccc;
   border-radius: 8px;
   background-color: white;
-  font-size: 0,5rem;
+  font-size: 0.875rem;
   cursor: pointer;
   transition: border-color 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
 }
@@ -161,36 +163,78 @@ h2 {
 
 .select-wrapper select:focus {
   outline: none;
+  border-color: #2e437d;
+  box-shadow: 0 0 0 2px rgba(46, 67, 125, 0.2);
 }
 
 .select-wrapper select::-ms-expand {
   display: none;
 }
 
-/* Mobile and small screen adjustments */
-@media (max-width: 768px) {
+/* Tablet adjustments (768px - 1024px) */
+@media (max-width: 1024px) {
   .chart-and-form-section {
-    flex-direction: column;  /* Di layar kecil, chart dan form akan ditampilkan secara vertikal */
-    gap: 1rem;
+    gap: 1.5rem;
+    padding: 1.5rem;
   }
 
-  .chart-container, .form-container {
-    width: 100%;
+  .chart-container,
+  .form-container {
+    flex: 1 1 100%; /* Pada tablet, buat lebih lebar tapi tetap dalam row */
   }
 }
 
-/* Adjustments for very small screens (mobile phones) */
-@media (max-width: 480px) {
+/* Mobile landscape and small tablets (600px - 768px) */
+@media (max-width: 768px) {
+  .chart-and-form-section {
+    flex-direction: column; /* Stack vertically */
+    gap: 1.25rem;
+    padding: 1.25rem;
+  }
+
+  .chart-container,
+  .form-container {
+    width: 100%;
+    flex: none;
+  }
+}
+
+/* Mobile portrait adjustments (up to 600px) */
+@media (max-width: 600px) {
   .chart-and-form-section {
     padding: 1rem;
+    gap: 1rem;
   }
 
+  .h2 {
+    font-size: 1rem;
+  }
+
+  .chart-container,
   .form-container {
-    padding: 1rem;
+    padding: 15px;
   }
 
-  .chart-container {
-    padding: 1rem;
+  .select-wrapper select {
+    padding: 10px 35px 10px 12px;
+    font-size: 0.8125rem;
+  }
+}
+
+/* Small mobile devices (up to 400px) */
+@media (max-width: 400px) {
+  .chart-and-form-section {
+    padding: 0.70rem;
+  }
+
+  .chart-container,
+  .form-container {
+    padding: 11px;
+    border-radius: 6px;
+  }
+
+  .form-group {
+    margin-bottom: 15px;
   }
 }
 
