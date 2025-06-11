@@ -1,130 +1,48 @@
-import React, { useState, useEffect, useCallback } from "react";
-import api from "../../service/api";
+import React, { useState, useEffect } from "react";
+import api from '../../service/api';
 import "../../styles/informasi.css";
 
-const InformasiPage = () => {
-  // State untuk data
-  const [informasiList, setInformasiList] = useState([]);
-  const [categories, setCategories] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
-  const [success, setSuccess] = useState("");
-
-  // State untuk search dan filter
+const EventsPage = () => {
+  const [eventsList, setEventsList] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
-  const [selectedCategory, setSelectedCategory] = useState("");
-  const [sortBy, setSortBy] = useState("newest");
-
-  // State untuk modal detail
-  const [selectedInfo, setSelectedInfo] = useState(null);
-  const [showModal, setShowModal] = useState(false);
-
-  // State untuk form tambah informasi
   const [showAddForm, setShowAddForm] = useState(false);
   const [formData, setFormData] = useState({
-    judul: "",
-    isi: "",
-    kategori: "",
-    nama_pengirim: "",
+    title: "",
+    description: "",
+    event_date: "",
+    location_address: ""
   });
-  const [formLoading, setFormLoading] = useState(false);
-  const [formErrors, setFormErrors] = useState({});
+  const [selectedEvent, setSelectedEvent] = useState(null);
+  const [showModal, setShowModal] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
 
-  // State untuk pagination
-  const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage] = useState(6);
-
-  // Fetch data dari API
-  const fetchInformasi = useCallback(async () => {
+  // Fetch events from API
+  const fetchEvents = async () => {
     try {
       setLoading(true);
+      let url = '/events';
+      if (searchTerm) {
+        url = `/events/search?keyword=${encodeURIComponent(searchTerm)}`;
+      }
+      
+      const response = await api.get(url);
+      setEventsList(response.data.data || []);
       setError("");
-
-      const params = {
-        ...(selectedCategory && { kategori: selectedCategory }),
-        ...(sortBy && { sort: sortBy }),
-        ...(searchTerm && { search: searchTerm }),
-      };
-
-      // Panggil API dengan method yang benar
-      const response = await api.getInformasi(params);
-
-      // Pastikan response sesuai struktur API Anda
-      setInformasiList(response.data || response);
     } catch (err) {
-      setError(
-        err.response?.data?.message ||
-          "Gagal memuat informasi. Silakan coba lagi."
-      );
-      console.error("Error fetching informasi:", err);
+      setError(err.response?.data?.message || "Gagal memuat data event");
+      console.error("Error fetching events:", err);
     } finally {
       setLoading(false);
     }
-  }, [selectedCategory, sortBy, searchTerm]);
+  };
 
-  // Fetch categories
-  const fetchCategories = useCallback(async () => {
-    try {
-      const response = await api.getKategori();
-      setCategories(response.data || response);
-    } catch (err) {
-      console.error("Error fetching categories:", err);
-      setError("Gagal memuat kategori");
-    }
-  }, []);
-
-  // Load data saat komponen mount atau filter berubah
   useEffect(() => {
-    fetchInformasi();
-    fetchCategories();
-  }, [fetchInformasi, fetchCategories]);
+    fetchEvents();
+  }, [searchTerm]);
 
-  // Filter dan sort informasi
-  const filteredAndSortedInformasi = React.useMemo(() => {
-    let filtered = [...informasiList];
-
-    // Filter berdasarkan search term jika ada
-    if (searchTerm) {
-      filtered = filtered.filter(
-        (info) =>
-          info.judul.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          info.isi.toLowerCase().includes(searchTerm.toLowerCase())
-      );
-    }
-
-    // Sort berdasarkan pilihan
-    switch (sortBy) {
-      case "newest":
-        filtered.sort(
-          (a, b) => new Date(b.tanggal_dibuat) - new Date(a.tanggal_dibuat)
-        );
-        break;
-      case "oldest":
-        filtered.sort(
-          (a, b) => new Date(a.tanggal_dibuat) - new Date(b.tanggal_dibuat)
-        );
-        break;
-      case "title":
-        filtered.sort((a, b) => a.judul.localeCompare(b.judul));
-        break;
-      default:
-        break;
-    }
-
-    return filtered;
-  }, [informasiList, searchTerm, sortBy]);
-
-  // Pagination logic
-  const totalPages = Math.ceil(
-    filteredAndSortedInformasi.length / itemsPerPage
-  );
-  const currentItems = filteredAndSortedInformasi.slice(
-    (currentPage - 1) * itemsPerPage,
-    currentPage * itemsPerPage
-  );
-
-  // Helper functions
   const formatDate = (dateString) => {
+    if (!dateString) return "";
     const options = {
       year: "numeric",
       month: "long",
@@ -142,357 +60,195 @@ const InformasiPage = () => {
       : `${text.substring(0, maxLength)}...`;
   };
 
-  // Modal handlers
-  const openModal = (info) => {
-    setSelectedInfo(info);
+  const openModal = (event) => {
+    setSelectedEvent(event);
     setShowModal(true);
   };
 
   const closeModal = () => {
-    setSelectedInfo(null);
+    setSelectedEvent(null);
     setShowModal(false);
   };
 
-  // Form handlers
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({
+    setFormData(prev => ({
       ...prev,
-      [name]: value,
+      [name]: value
     }));
-
-    // Clear error saat user mulai mengetik
-    if (formErrors[name]) {
-      setFormErrors((prev) => ({ ...prev, [name]: "" }));
-    }
-  };
-
-  const validateForm = () => {
-    const errors = {};
-    const { judul, isi, kategori, nama_pengirim } = formData;
-
-    if (!judul.trim()) errors.judul = "Judul harus diisi";
-    else if (judul.length < 5) errors.judul = "Judul minimal 5 karakter";
-
-    if (!isi.trim()) errors.isi = "Isi informasi harus diisi";
-    else if (isi.length < 20) errors.isi = "Isi informasi minimal 20 karakter";
-
-    if (!kategori) errors.kategori = "Kategori harus dipilih";
-    if (!nama_pengirim.trim())
-      errors.nama_pengirim = "Nama pengirim harus diisi";
-
-    return errors;
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    const errors = validateForm();
-
-    if (Object.keys(errors).length > 0) {
-      setFormErrors(errors);
-      return;
-    }
-
     try {
-      setFormLoading(true);
-      setFormErrors({});
-
-      const dataToSubmit = {
-        ...formData,
-        tanggal_dibuat: new Date().toISOString(),
-      };
-
-      await api.createInformasi(dataToSubmit);
-
-      setSuccess("Informasi berhasil ditambahkan!");
-      setShowAddForm(false);
+      const response = await api.post('/events', formData);
+      setEventsList(prev => [response.data.data, ...prev]);
       setFormData({
-        judul: "",
-        isi: "",
-        kategori: "",
-        nama_pengirim: "",
+        title: "",
+        description: "",
+        event_date: "",
+        location_address: ""
       });
-
-      // Refresh data
-      await fetchInformasi();
-
-      setTimeout(() => setSuccess(""), 5000);
+      setShowAddForm(false);
+      setError("");
     } catch (err) {
-      console.error("Error creating informasi:", err);
-      setError(err.response?.data?.message || "Gagal menambahkan informasi");
-      if (err.response?.data?.errors) {
-        setFormErrors(err.response.data.errors);
-      }
-    } finally {
-      setFormLoading(false);
+      console.error("Error creating event:", err);
+      setError(err.response?.data?.message || "Gagal membuat event. Pastikan data valid dan Anda sudah login.");
     }
   };
 
-  const clearMessages = () => {
-    setError("");
-    setSuccess("");
-  };
-
-  // Search with debounce
-  const handleSearch = useCallback((value) => {
-    const timer = setTimeout(() => {
-      setSearchTerm(value);
-      setCurrentPage(1);
-    }, 300);
-
-    return () => clearTimeout(timer);
-  }, []);
-
-  // Reset pagination when filters change
-  useEffect(() => {
-    setCurrentPage(1);
-  }, [searchTerm, selectedCategory, sortBy]);
-
-  // Loading state
-  if (loading) {
+  if (loading && eventsList.length === 0) {
     return (
       <div className="loading-container">
         <div className="loading-spinner"></div>
-        <p>Memuat informasi...</p>
+        <p>Memuat data event...</p>
       </div>
     );
   }
 
   return (
     <div className="informasi-page">
-      {/* Header */}
-      <div className="page-header">
-        <h1>Informasi & Tips</h1>
-        <p>Berbagi informasi, tips, dan kegiatan seputar pengelolaan sampah</p>
-        <button className="btn-add" onClick={() => setShowAddForm(true)}>
-          + Tambah Informasi
-        </button>
+      <div className="page-header-container">
+        <div className="page-header">
+          <h1>Daftar Event</h1>
+          <p>Kegiatan dan acara seputar pengelolaan sampah</p>
+        </div>
       </div>
 
-      {/* Messages */}
-      {(error || success) && (
-        <div className={`message ${error ? "error" : "success"}`}>
-          <p>{error || success}</p>
-          <button className="message-close" onClick={clearMessages}>
-            ×
-          </button>
+      {error && (
+        <div className="error-message">
+          <p>{error}</p>
+          <button onClick={() => setError("")}>&times;</button>
         </div>
       )}
 
-      {/* Filters */}
-      <div className="filters-container">
+      <div className="tools-container">
         <div className="search-container">
           <input
             type="text"
-            placeholder="Cari informasi berdasarkan judul atau isi..."
-            onChange={(e) => handleSearch(e.target.value)}
+            placeholder="Cari event..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
             className="search-input"
           />
-        </div>
-
-        <div className="filter-controls">
-          <select
-            value={selectedCategory}
-            onChange={(e) => setSelectedCategory(e.target.value)}
-            className="filter-select"
+          <button 
+            className="search-button"
+            onClick={() => fetchEvents()}
           >
-            <option value="">Semua Kategori</option>
-            {categories.map((category, index) => (
-              <option key={index} value={category}>
-                {category}
-              </option>
-            ))}
-          </select>
-
-          <select
-            value={sortBy}
-            onChange={(e) => setSortBy(e.target.value)}
-            className="filter-select"
-          >
-            <option value="newest">Terbaru</option>
-            <option value="oldest">Terlama</option>
-            <option value="title">Judul A-Z</option>
-          </select>
+            <i className="search-icon">🔍</i>
+          </button>
         </div>
+        
+        <button 
+          className="btn-add"
+          onClick={() => setShowAddForm(true)}
+        >
+          + Tambah Event
+        </button>
       </div>
 
-      {/* Results Info */}
-      {searchTerm && (
-        <div className="results-info">
-          <p>
-            Menampilkan {filteredAndSortedInformasi.length} hasil untuk "
-            {searchTerm}"
-          </p>
-        </div>
-      )}
-
-      {/* Informasi Cards */}
       <div className="informasi-grid">
-        {currentItems.length === 0 ? (
+        {eventsList.length === 0 ? (
           <div className="no-data">
-            <p>
-              {searchTerm
-                ? `Tidak ada informasi yang cocok dengan "${searchTerm}"`
-                : "Belum ada informasi tersedia"}
-            </p>
+            <p>{searchTerm ? `Tidak ditemukan event dengan kata kunci "${searchTerm}"` : "Belum ada event tersedia"}</p>
           </div>
         ) : (
-          currentItems.map((info) => (
-            <div key={info.id} className="info-card">
+          eventsList.map((event) => (
+            <div key={event.id} className="info-card">
               <div className="card-header">
-                <h3 className="card-title">{info.judul}</h3>
+                <h3 className="card-title">{event.title}</h3>
                 <div className="card-meta">
                   <span className="card-date">
-                    {formatDate(info.tanggal_dibuat)}
+                    {formatDate(event.event_date)}
                   </span>
-                  {info.kategori && (
-                    <span className="card-category">{info.kategori}</span>
-                  )}
+                  <span className="card-location">
+                    📍 {truncateText(event.location_address, 40)}
+                  </span>
                 </div>
               </div>
 
               <div className="card-content">
-                <p className="card-preview">{truncateText(info.isi)}</p>
+                <p className="card-preview">{truncateText(event.description)}</p>
               </div>
 
               <div className="card-footer">
-                <div className="card-author">
-                  {info.nama_pengirim && (
-                    <span>Oleh: {info.nama_pengirim}</span>
-                  )}
+                <div className="footer-content">
+                  <div className="card-organizer">
+                    <span>Penyelenggara: {event.organizer_name || 'Tidak diketahui'}</span>
+                  </div>
+                  <button 
+                    className="btn-detail" 
+                    onClick={() => openModal(event)}
+                  >
+                    Lihat Detail
+                  </button>
                 </div>
-                <button className="btn-detail" onClick={() => openModal(info)}>
-                  Lihat Selengkapnya
-                </button>
               </div>
             </div>
           ))
         )}
       </div>
 
-      {/* Pagination */}
-      {totalPages > 1 && (
-        <div className="pagination">
-          <button
-            className="pagination-btn"
-            disabled={currentPage === 1}
-            onClick={() => setCurrentPage((prev) => prev - 1)}
-          >
-            ‹ Sebelumnya
-          </button>
-
-          <div className="pagination-numbers">
-            {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
-              <button
-                key={page}
-                className={`pagination-number ${
-                  currentPage === page ? "active" : ""
-                }`}
-                onClick={() => setCurrentPage(page)}
-              >
-                {page}
-              </button>
-            ))}
-          </div>
-
-          <button
-            className="pagination-btn"
-            disabled={currentPage === totalPages}
-            onClick={() => setCurrentPage((prev) => prev + 1)}
-          >
-            Selanjutnya ›
-          </button>
-        </div>
-      )}
-
-      {/* Modal Add Form */}
       {showAddForm && (
         <div className="modal-overlay" onClick={() => setShowAddForm(false)}>
-          <div
-            className="modal-content add-form-modal"
-            onClick={(e) => e.stopPropagation()}
-          >
+          <div className="modal-content add-form-modal" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
-              <h2>Tambah Informasi Baru</h2>
-              <button
-                className="modal-close"
-                onClick={() => setShowAddForm(false)}
-              >
+              <h2>Tambah Event Baru</h2>
+              <button className="modal-close" onClick={() => setShowAddForm(false)}>
                 &times;
               </button>
             </div>
 
             <form onSubmit={handleSubmit} className="add-form">
               <div className="form-group">
-                <label htmlFor="judul">Judul *</label>
+                <label htmlFor="title">Judul Event *</label>
                 <input
                   type="text"
-                  id="judul"
-                  name="judul"
-                  value={formData.judul}
+                  id="title"
+                  name="title"
+                  value={formData.title}
                   onChange={handleInputChange}
-                  className={formErrors.judul ? "error" : ""}
-                  placeholder="Masukkan judul informasi"
+                  required
+                  placeholder="Masukkan judul event"
                 />
-                {formErrors.judul && (
-                  <span className="error-text">{formErrors.judul}</span>
-                )}
               </div>
 
               <div className="form-group">
-                <label htmlFor="kategori">Kategori *</label>
-                <select
-                  id="kategori"
-                  name="kategori"
-                  value={formData.kategori}
-                  onChange={handleInputChange}
-                  className={formErrors.kategori ? "error" : ""}
-                >
-                  <option value="">Pilih Kategori</option>
-                  {categories.map((category, index) => (
-                    <option key={index} value={category}>
-                      {category}
-                    </option>
-                  ))}
-                </select>
-                {formErrors.kategori && (
-                  <span className="error-text">{formErrors.kategori}</span>
-                )}
-              </div>
-
-              <div className="form-group">
-                <label htmlFor="nama_pengirim">Nama Pengirim *</label>
+                <label htmlFor="event_date">Tanggal Event *</label>
                 <input
-                  type="text"
-                  id="nama_pengirim"
-                  name="nama_pengirim"
-                  value={formData.nama_pengirim}
+                  type="datetime-local"
+                  id="event_date"
+                  name="event_date"
+                  value={formData.event_date}
                   onChange={handleInputChange}
-                  className={formErrors.nama_pengirim ? "error" : ""}
-                  placeholder="Masukkan nama Anda"
+                  required
                 />
-                {formErrors.nama_pengirim && (
-                  <span className="error-text">{formErrors.nama_pengirim}</span>
-                )}
               </div>
 
               <div className="form-group">
-                <label htmlFor="isi">Isi Informasi *</label>
+                <label htmlFor="location_address">Alamat Lokasi *</label>
                 <textarea
-                  id="isi"
-                  name="isi"
-                  value={formData.isi}
+                  id="location_address"
+                  name="location_address"
+                  value={formData.location_address}
                   onChange={handleInputChange}
-                  className={formErrors.isi ? "error" : ""}
-                  placeholder="Tulis informasi lengkap di sini..."
-                  rows="8"
+                  required
+                  placeholder="Masukkan alamat lengkap lokasi event"
+                  rows="3"
                 />
-                <div className="char-count">
-                  {formData.isi.length} karakter (minimal 20)
-                </div>
-                {formErrors.isi && (
-                  <span className="error-text">{formErrors.isi}</span>
-                )}
+              </div>
+
+              <div className="form-group">
+                <label htmlFor="description">Deskripsi *</label>
+                <textarea
+                  id="description"
+                  name="description"
+                  value={formData.description}
+                  onChange={handleInputChange}
+                  required
+                  placeholder="Tulis deskripsi lengkap event..."
+                  rows="5"
+                />
               </div>
 
               <div className="form-actions">
@@ -500,16 +256,15 @@ const InformasiPage = () => {
                   type="button"
                   className="btn-cancel"
                   onClick={() => setShowAddForm(false)}
-                  disabled={formLoading}
                 >
                   Batal
                 </button>
                 <button
                   type="submit"
                   className="btn-submit"
-                  disabled={formLoading}
+                  disabled={loading}
                 >
-                  {formLoading ? "Menyimpan..." : "Simpan Informasi"}
+                  {loading ? "Menyimpan..." : "Simpan Event"}
                 </button>
               </div>
             </form>
@@ -517,15 +272,11 @@ const InformasiPage = () => {
         </div>
       )}
 
-      {/* Modal Detail */}
-      {showModal && selectedInfo && (
+      {showModal && selectedEvent && (
         <div className="modal-overlay" onClick={closeModal}>
-          <div
-            className="modal-content detail-modal"
-            onClick={(e) => e.stopPropagation()}
-          >
+          <div className="modal-content detail-modal" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
-              <h2>{selectedInfo.judul}</h2>
+              <h2>{selectedEvent.title}</h2>
               <button className="modal-close" onClick={closeModal}>
                 &times;
               </button>
@@ -533,23 +284,38 @@ const InformasiPage = () => {
 
             <div className="modal-body">
               <div className="modal-meta">
-                <span className="modal-date">
-                  {formatDate(selectedInfo.tanggal_dibuat)}
-                </span>
-                {selectedInfo.kategori && (
-                  <span className="modal-category">
-                    {selectedInfo.kategori}
-                  </span>
-                )}
-                {selectedInfo.nama_pengirim && (
-                  <span className="modal-author">
-                    Oleh: {selectedInfo.nama_pengirim}
-                  </span>
-                )}
+                <div className="meta-item">
+                  <strong>Penyelenggara:</strong>
+                  <div className="organizer-info">
+                    <span>{selectedEvent.organizer_name || 'Tidak diketahui'}</span>
+                    {selectedEvent.organizer_email && <span>📧 {selectedEvent.organizer_email}</span>}
+                    {selectedEvent.organizer_phone && <span>📞 {selectedEvent.organizer_phone}</span>}
+                  </div>
+                </div>
+
+                <div className="meta-item">
+                  <strong>Waktu Pelaksanaan:</strong>
+                  <span>{formatDate(selectedEvent.event_date)}</span>
+                </div>
+
+                <div className="meta-item">
+                  <strong>Lokasi:</strong>
+                  <div className="location-address">
+                    {selectedEvent.location_address}
+                  </div>
+                </div>
+
+                <div className="meta-item">
+                  <strong>Dibuat pada:</strong>
+                  <span>{formatDate(selectedEvent.created_at)}</span>
+                </div>
               </div>
 
-              <div className="modal-text">
-                <p>{selectedInfo.isi}</p>
+              <div className="modal-section">
+                <h3>Deskripsi Event</h3>
+                <div className="modal-text">
+                  <p>{selectedEvent.description}</p>
+                </div>
               </div>
             </div>
           </div>
@@ -559,4 +325,4 @@ const InformasiPage = () => {
   );
 };
 
-export default InformasiPage;
+export default EventsPage;

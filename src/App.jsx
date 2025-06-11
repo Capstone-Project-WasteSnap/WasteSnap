@@ -1,4 +1,3 @@
-// import { useEffect } from "react";
 import Navbar from "./components/layout/navbar";
 import Footer from "./components/layout/footer";
 import AppRoutes from "./routes/routes";
