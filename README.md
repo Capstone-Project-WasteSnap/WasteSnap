@@ -1,12 +1,70 @@
-# React + Vite
+# 🗑️ WasteSnap
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+**WasteSnap** adalah aplikasi web berbasis React yang membantu pengguna dalam memahami dan mengelola limbah melalui edukasi, kolaborasi, dan prediksi data. Aplikasi ini dikembangkan oleh tim pengembang yang terdiri dari beberapa kontributor, dan menggunakan Vite sebagai build tool.
 
-Currently, two official plugins are available:
+## 🚀 Fitur Utama
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+- 📚 Edukasi tentang pengelolaan sampah
+- 🤖 Chatbot interaktif
+- 🔐 Form Login & Register
+- 📊 Prediksi data pengelolaan sampah
+- 📍 Data visualisasi berdasarkan provinsi
 
-## Expanding the ESLint configuration
+## 🛠️ Teknologi yang Digunakan
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+- ReactJS + Vite
+- JavaScript (ES6+)
+- CSS
+- Context API
+- SVG & Image assets
+
+## 📁 Struktur Folder Penting
+
+```
+WasteSnap-main/
+├── public/               # Aset publik seperti logo dan dataset CSV
+├── src/
+│   ├── assets/           # Gambar dan ilustrasi
+│   ├── components/       # Komponen UI (navbar, footer, chatbot, auth form)
+│   ├── context/          # Context API untuk autentikasi
+│   ├── pages/            # Halaman-halaman utama aplikasi
+│   ├── App.jsx           # Root komponen
+│   └── main.jsx          # Entry point React
+├── index.html            # Halaman utama HTML
+├── package.json          # Konfigurasi proyek dan dependencies
+├── vite.config.js        # Konfigurasi Vite
+└── README.md             # Dokumentasi proyek
+```
+
+## 📦 Cara Menjalankan Proyek
+
+Pastikan Anda sudah menginstal [Node.js](https://nodejs.org/).
+
+```bash
+# Clone repositori
+git clone https://github.com/nama-akun/WasteSnap.git
+cd WasteSnap-main
+
+# Instal dependensi
+npm install
+
+# Jalankan aplikasi
+npm run dev
+```
+
+Aplikasi akan berjalan di `http://localhost:5173`.
+
+## 👥 Kontributor
+
+Tim pengembang:
+
+- Artur
+- Diva
+- Falen
+- Sakifa
+- Wildan
+- Yogi
+
+## 📄 Lisensi
+
+Proyek ini dilindungi hak cipta. Untuk penggunaan dan kontribusi, silakan hubungi pengembang utama.
