@@ -161,7 +161,14 @@
 }
 
 /* Event Card */
-/* Card Styles */
+.informasi-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+  gap: 2rem;
+  margin-bottom: 3rem;
+  padding-bottom: 2rem;
+}
+
 .info-card {
   background: white;
   border-radius: 10px;
