@@ -16,7 +16,7 @@ const LoginPage = () => {
     setError("");
 
     try {
-      const response = await api.post("/auth/login", formData);
+      const response = await api.post("/api/auth/login", formData);
       login(response.data.token);
       navigate("/");
     } catch (err) {
