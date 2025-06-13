@@ -1,7 +1,7 @@
 import axios from "axios";
 
 const api = axios.create({
-  baseURL: "http://localhost:5000/api",
+  baseURL: "https://wasteapi.1dev.win",
   headers: {
     "Content-Type": "application/json",
   },
@@ -29,7 +29,7 @@ api.interceptors.response.use(
 );
 
 // Fungsi untuk analisis gambar
-export const saveScanResult = (data) => api.post('/scans', data);
+export const saveScanResult = (data) => api.post("/scans", data);
 export const getScanHistory = (userId) => api.get(`/scans/${userId}`);
 
 export default api;
