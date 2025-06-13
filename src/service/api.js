@@ -1,7 +1,7 @@
 import axios from "axios";
 
 const api = axios.create({
-  baseURL: "https://wasteapi.1dev.win",
+  baseURL: "https://wasteapi.1dev.win/api",
   headers: {
     "Content-Type": "application/json",
   },
